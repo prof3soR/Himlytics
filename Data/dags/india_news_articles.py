@@ -38,10 +38,24 @@ with DAG(
         pg_hook.run(CREATE_TABLE_SQL)
 
     # Step 2: Extract News API Data
+    districts = [
+        "Bilaspur", "Chamba", "Hamirpur", "Kangra", "Kinnaur", "Kullu", "Lahaul and Spiti",
+        "Mandi", "Shimla", "Sirmaur", "Solan", "Una"
+    ]
+
+    # Build the query string with ORs
+    query = "himachal tourism " + " OR ".join([f'"{district} tourism"' for district in districts])
+
+    from_date = '2025-03-12'
+    to_date = '2025-04-12'
+
     extract_news_data = SimpleHttpOperator(
         task_id="extract_news_data",
         http_conn_id="newsapi_conn",
-        endpoint="v2/everything?q=himachal+tourism&language=en&sortBy=publishedAt&apiKey={{ conn.newsapi_conn.extra_dejson.api_key }}",
+        endpoint=(
+            f"v2/everything?q={query}&from={from_date}&to={to_date}"
+            f"&language=en&sortBy=publishedAt&apiKey={{{{ conn.newsapi_conn.extra_dejson.api_key }}}}"
+        ),
         method="GET",
         response_filter=lambda response: response.json().get("articles", []),
         log_response=True,
